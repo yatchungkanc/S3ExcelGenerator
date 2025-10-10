@@ -1,0 +1,38 @@
+S3 Storage Cost Calculator (1 Year)
+
+Input Parameters
+Base Size (GB),100
+Monthly Incremental Size (GB),50
+Storage Period (months),12
+Transition to IA after (days),30
+Transition to Glacier after (days),90
+
+S3 Pricing (USD per GB/month)
+Standard,0.023
+Standard-IA,0.0125
+Glacier Flexible,0.004
+
+Month,Total Size (GB),Standard (GB),Standard-IA (GB),Glacier (GB),Standard Cost,IA Cost,Glacier Cost,Monthly Total
+1,100.00,100.00,0.00,0.00,$2.30,$0.00,$0.00,$2.30
+2,150.00,0.00,150.00,0.00,$0.00,$1.88,$0.00,$1.88
+3,200.00,0.00,200.00,0.00,$0.00,$2.50,$0.00,$2.50
+4,250.00,0.00,0.00,250.00,$0.00,$0.00,$1.00,$1.00
+5,300.00,0.00,0.00,300.00,$0.00,$0.00,$1.20,$1.20
+6,350.00,0.00,0.00,350.00,$0.00,$0.00,$1.40,$1.40
+7,400.00,0.00,0.00,400.00,$0.00,$0.00,$1.60,$1.60
+8,450.00,0.00,0.00,450.00,$0.00,$0.00,$1.80,$1.80
+9,500.00,0.00,0.00,500.00,$0.00,$0.00,$2.00,$2.00
+10,550.00,0.00,0.00,550.00,$0.00,$0.00,$2.20,$2.20
+11,600.00,0.00,0.00,600.00,$0.00,$0.00,$2.40,$2.40
+12,650.00,0.00,0.00,650.00,$0.00,$0.00,$2.60,$2.60
+
+Summary
+Total Annual Cost,$22.88
+Average Monthly Cost,$1.91
+Final Storage Size,650.00 GB
+
+Instructions:
+1. Modify parameters in the script to adjust calculations
+2. Pricing reflects current AWS S3 rates
+3. Transitions occur based on data age in days
+4. Import this CSV into Excel for advanced formatting
