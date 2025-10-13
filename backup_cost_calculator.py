@@ -1,34 +1,26 @@
 #!/usr/bin/env python3
 from datetime import datetime
 import pandas as pd
+import json
+import os
 
-def create_backup_cost_calculator():
-    # Storage tier pricing (USD per GB/month)
-    pricing = {
-        'S3 Standard': 0.023,
-        'S3 Intelligent': 0.0125,
-        'S3-IA': 0.0125,
-        'Glacier IR': 0.004,
-        'Glacier Deep Archive': 0.00099
-    }
+def load_config(config_file='backup_config.json'):
+    """Load configuration from JSON file"""
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"Config file {config_file} not found")
     
-    # Minimum storage duration (days)
-    min_duration = {
-        'S3 Standard': 0,
-        'S3 Intelligent': 0,
-        'S3-IA': 30,
-        'Glacier IR': 90,
-        'Glacier Deep Archive': 180
-    }
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+def create_backup_cost_calculator(config_file='backup_config.json'):
+    config = load_config(config_file)
     
-    # Retrieval costs (USD per GB)
-    retrieval_costs = {
-        'S3 Standard': 0,
-        'S3 Intelligent': 0,
-        'S3-IA': 0.01,
-        'Glacier IR': 0.03,
-        'Glacier Deep Archive': 0.02
-    }
+    pricing = config['pricing']
+    min_duration = config['min_duration']
+    retrieval_costs = config['retrieval_costs']
+    backup_config = config['backup_config']
+    storage_size_gb = config['storage_size_gb']
+    tier_retention = config['tier_retention']
     
     # Create Excel writer
     filename = f"Backup_Cost_Calculator_{datetime.now().strftime('%Y%m%d')}.xlsx"
@@ -47,29 +39,29 @@ def create_backup_cost_calculator():
         config_sheet['E3'] = 'Retention (days)'
         
         config_sheet['A4'] = 'Hourly backups'
-        config_sheet['B4'] = 1
-        config_sheet['C4'] = 1
+        config_sheet['B4'] = backup_config['hourly']['count']
+        config_sheet['C4'] = backup_config['hourly']['tier']
         config_sheet['D4'] = '=IF(C4=1,"S3 Standard",IF(C4=2,"S3 Intelligent",IF(C4=3,"S3-IA",IF(C4=4,"Glacier IR",IF(C4=5,"Glacier DA","INVALID")))))'
-        config_sheet['E4'] = 7
+        config_sheet['E4'] = backup_config['hourly']['retention']
         
         config_sheet['A5'] = 'Daily backups'
-        config_sheet['B5'] = 1
-        config_sheet['C5'] = 1
+        config_sheet['B5'] = backup_config['daily']['count']
+        config_sheet['C5'] = backup_config['daily']['tier']
         config_sheet['D5'] = '=IF(C5=1,"S3 Standard",IF(C5=2,"S3 Intelligent",IF(C5=3,"S3-IA",IF(C5=4,"Glacier IR",IF(C5=5,"Glacier DA","INVALID")))))'
-        config_sheet['E5'] = 30
+        config_sheet['E5'] = backup_config['daily']['retention']
         
         config_sheet['A6'] = 'Weekly backups'
-        config_sheet['B6'] = 1
-        config_sheet['C6'] = 2
+        config_sheet['B6'] = backup_config['weekly']['count']
+        config_sheet['C6'] = backup_config['weekly']['tier']
         config_sheet['D6'] = '=IF(C6=1,"S3 Standard",IF(C6=2,"S3 Intelligent",IF(C6=3,"S3-IA",IF(C6=4,"Glacier IR",IF(C6=5,"Glacier DA","INVALID")))))'
         
         config_sheet['A7'] = 'Off-account backups'
-        config_sheet['B7'] = 1
-        config_sheet['C7'] = 4
+        config_sheet['B7'] = backup_config['off_account']['count']
+        config_sheet['C7'] = backup_config['off_account']['tier']
         config_sheet['D7'] = '=IF(C7=1,"S3 Standard",IF(C7=2,"S3 Intelligent",IF(C7=3,"S3-IA",IF(C7=4,"Glacier IR",IF(C7=5,"Glacier DA","INVALID")))))'
         
         config_sheet['A9'] = 'Incremental storage size (GB)'
-        config_sheet['B9'] = 100
+        config_sheet['B9'] = storage_size_gb
         
         # Section 2: Storage Tier Retention
         config_sheet['A11'] = 'STORAGE TIER RETENTION'
@@ -79,28 +71,28 @@ def create_backup_cost_calculator():
         config_sheet['D13'] = 'Status'
         
         config_sheet['A14'] = 'S3 Standard'
-        config_sheet['B14'] = 15
-        config_sheet['C14'] = 0
+        config_sheet['B14'] = tier_retention['S3 Standard']
+        config_sheet['C14'] = min_duration['S3 Standard']
         config_sheet['D14'] = '=IF(B14>=C14,"OK","PENALTY")'
         
         config_sheet['A15'] = 'S3 Intelligent'
-        config_sheet['B15'] = 15
-        config_sheet['C15'] = 0
+        config_sheet['B15'] = tier_retention['S3 Intelligent']
+        config_sheet['C15'] = min_duration['S3 Intelligent']
         config_sheet['D15'] = '=IF(B15>=C15,"OK","PENALTY")'
         
         config_sheet['A16'] = 'S3-IA'
-        config_sheet['B16'] = 15
-        config_sheet['C16'] = 30
+        config_sheet['B16'] = tier_retention['S3-IA']
+        config_sheet['C16'] = min_duration['S3-IA']
         config_sheet['D16'] = '=IF(B16>=C16,"OK","PENALTY")'
         
         config_sheet['A17'] = 'Glacier IR'
-        config_sheet['B17'] = 15
-        config_sheet['C17'] = 90
+        config_sheet['B17'] = tier_retention['Glacier IR']
+        config_sheet['C17'] = min_duration['Glacier IR']
         config_sheet['D17'] = '=IF(B17>=C17,"OK","PENALTY")'
         
         config_sheet['A18'] = 'Glacier Deep Archive'
-        config_sheet['B18'] = 15
-        config_sheet['C18'] = 180
+        config_sheet['B18'] = tier_retention['Glacier Deep Archive']
+        config_sheet['C18'] = min_duration['Glacier Deep Archive']
         config_sheet['D18'] = '=IF(B18>=C18,"OK","PENALTY")'
         
         # Section 3: Data Flow Visualization - FIXED with all 4 backup types

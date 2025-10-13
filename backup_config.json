@@ -1,0 +1,37 @@
+{
+  "pricing": {
+    "S3 Standard": 0.023,
+    "S3 Intelligent": 0.0125,
+    "S3-IA": 0.0125,
+    "Glacier IR": 0.004,
+    "Glacier Deep Archive": 0.00099
+  },
+  "min_duration": {
+    "S3 Standard": 0,
+    "S3 Intelligent": 0,
+    "S3-IA": 30,
+    "Glacier IR": 90,
+    "Glacier Deep Archive": 180
+  },
+  "retrieval_costs": {
+    "S3 Standard": 0,
+    "S3 Intelligent": 0,
+    "S3-IA": 0.01,
+    "Glacier IR": 0.03,
+    "Glacier Deep Archive": 0.02
+  },
+  "backup_config": {
+    "hourly": {"count": 1, "tier": 1, "retention": 7},
+    "daily": {"count": 1, "tier": 1, "retention": 30},
+    "weekly": {"count": 1, "tier": 2},
+    "off_account": {"count": 1, "tier": 4}
+  },
+  "storage_size_gb": 100,
+  "tier_retention": {
+    "S3 Standard": 15,
+    "S3 Intelligent": 15,
+    "S3-IA": 15,
+    "Glacier IR": 15,
+    "Glacier Deep Archive": 15
+  }
+}
