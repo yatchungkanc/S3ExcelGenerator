@@ -81,6 +81,28 @@ def create_backup_cost_calculator():
         config_sheet['A19'] = '• Monthly backups grow from 1 to 12 over the year'
         config_sheet['A20'] = '• Off-account backups only appear after month 12'
         
+        # Add visual data transition flow
+        config_sheet['E14'] = 'DATA TRANSITION FLOW:'
+        config_sheet['E15'] = 'Hourly + Daily →'
+        config_sheet['F15'] = 'S3 Standard'
+        config_sheet['G15'] = '=IF(B8>0,CONCATENATE("(",B8," days)"),"(SKIP)")'
+        
+        config_sheet['E17'] = 'Weekly + Monthly + Off-account →'
+        config_sheet['F17'] = '=IF(B9>0,"S3 Intelligent",IF(B10>0,"S3-IA",IF(B11>0,"Glacier IR",IF(B12>0,"Glacier DA","NONE"))))'
+        config_sheet['G17'] = '=IF(B9>0,CONCATENATE("(",B9," days)"),IF(B10>0,CONCATENATE("(",B10," days)"),IF(B11>0,CONCATENATE("(",B11," days)"),IF(B12>0,CONCATENATE("(",B12," days)"),"(SKIP)"))))'
+        
+        config_sheet['F18'] = '↓'
+        config_sheet['F19'] = '=IF(AND(B9>0,B10>0),"S3-IA",IF(AND(B9=0,B10>0,B11>0),"Glacier IR","END"))'
+        config_sheet['G19'] = '=IF(AND(B9>0,B10>0),CONCATENATE("(",B10," days)"),IF(AND(B9=0,B10>0,B11>0),CONCATENATE("(",B11," days)"),""))'
+        
+        config_sheet['F20'] = '↓'
+        config_sheet['F21'] = '=IF(AND(B9>0,B10>0,B11>0),"Glacier IR","END")'
+        config_sheet['G21'] = '=IF(AND(B9>0,B10>0,B11>0),CONCATENATE("(",B11," days)"),"")'
+        
+        config_sheet['F22'] = '↓'
+        config_sheet['F23'] = '=IF(AND(B9>0,B10>0,B11>0,B12>0),"Glacier DA","END")'
+        config_sheet['G23'] = '=IF(AND(B9>0,B10>0,B11>0,B12>0),CONCATENATE("(",B12," days)"),"")'
+        
         # Pricing sheet
         pricing_data = {
             'Storage Tier': list(pricing.keys()),
@@ -158,8 +180,9 @@ def create_backup_cost_calculator():
         for row in range(2, 12):
             config_sheet[f'B{row}'].fill = blue_fill
         
-        # Format explanation header
+        # Format explanation headers
         config_sheet['A14'].font = bold_font
+        config_sheet['E14'].font = bold_font
         
         # Format pricing sheet values as editable
         pricing_sheet = workbook['Pricing']
