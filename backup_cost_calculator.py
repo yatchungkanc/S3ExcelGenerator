@@ -44,16 +44,19 @@ def create_backup_cost_calculator():
         config_sheet['B3'] = 'Count'
         config_sheet['C3'] = 'Storage Tier'
         config_sheet['D3'] = 'Tier Name'
+        config_sheet['E3'] = 'Retention (days)'
         
         config_sheet['A4'] = 'Hourly backups'
         config_sheet['B4'] = 1
         config_sheet['C4'] = 1
         config_sheet['D4'] = '=IF(C4=1,"S3 Standard",IF(C4=2,"S3 Intelligent",IF(C4=3,"S3-IA",IF(C4=4,"Glacier IR",IF(C4=5,"Glacier DA","INVALID")))))'
+        config_sheet['E4'] = 7
         
         config_sheet['A5'] = 'Daily backups'
         config_sheet['B5'] = 1
         config_sheet['C5'] = 1
         config_sheet['D5'] = '=IF(C5=1,"S3 Standard",IF(C5=2,"S3 Intelligent",IF(C5=3,"S3-IA",IF(C5=4,"Glacier IR",IF(C5=5,"Glacier DA","INVALID")))))'
+        config_sheet['E5'] = 30
         
         config_sheet['A6'] = 'Weekly backups'
         config_sheet['B6'] = 1
@@ -108,11 +111,11 @@ def create_backup_cost_calculator():
         
         config_sheet['F4'] = 'Hourly'
         config_sheet['G4'] = '=D4'
-        config_sheet['H4'] = '=IF(C4=1,IF(B14>0,CONCATENATE(B14," days"),"SKIP"),IF(C4=2,IF(B15>0,CONCATENATE(B15," days"),"SKIP"),IF(C4=3,IF(B16>0,CONCATENATE(B16," days"),"SKIP"),IF(C4=4,IF(B17>0,CONCATENATE(B17," days"),"SKIP"),IF(C4=5,IF(B18>0,CONCATENATE(B18," days"),"SKIP"),"INVALID")))))'
+        config_sheet['H4'] = '=IF(E4>0,CONCATENATE(E4," days"),"SKIP")'
         
         config_sheet['F5'] = 'Daily'
         config_sheet['G5'] = '=D5'
-        config_sheet['H5'] = '=IF(C5=1,IF(B14>0,CONCATENATE(B14," days"),"SKIP"),IF(C5=2,IF(B15>0,CONCATENATE(B15," days"),"SKIP"),IF(C5=3,IF(B16>0,CONCATENATE(B16," days"),"SKIP"),IF(C5=4,IF(B17>0,CONCATENATE(B17," days"),"SKIP"),IF(C5=5,IF(B18>0,CONCATENATE(B18," days"),"SKIP"),"INVALID")))))'
+        config_sheet['H5'] = '=IF(E5>0,CONCATENATE(E5," days"),"SKIP")'
         
         config_sheet['F6'] = 'Weekly'
         config_sheet['G6'] = '=D6'
@@ -145,6 +148,9 @@ def create_backup_cost_calculator():
             config_sheet[f'B{row}'].fill = blue_fill
         for row in [4, 5, 6, 7]:
             config_sheet[f'C{row}'].fill = blue_fill
+        # Make hourly and daily retention editable
+        for row in [4, 5]:
+            config_sheet[f'E{row}'].fill = blue_fill
         
         # Make retention days editable
         for row in range(14, 19):
@@ -190,7 +196,7 @@ def create_backup_cost_calculator():
             calc_sheet[f'B{row}'] = f'=(Configuration!B4+Configuration!B5+Configuration!B6+Configuration!B7)*Configuration!B9'
             
             # S3 Standard storage - hourly(tier=1) + daily(tier=1) + weekly(tier=1) + off-account(tier=1)
-            calc_sheet[f'C{row}'] = f'=IF(Configuration!B14>0,(IF(Configuration!C4=1,Configuration!B4,0)+IF(Configuration!C5=1,Configuration!B5,0)+IF(Configuration!C6=1,Configuration!B6,0)+IF(Configuration!C7=1,Configuration!B7,0))*Configuration!B9*MIN(Configuration!B14,{month}*30)/30,0)'
+            calc_sheet[f'C{row}'] = f'=(IF(Configuration!C4=1,Configuration!B4*Configuration!B9*MIN(Configuration!E4,{month}*30)/30,0)+IF(Configuration!C5=1,Configuration!B5*Configuration!B9*MIN(Configuration!E5,{month}*30)/30,0)+IF(Configuration!C6=1,Configuration!B6*Configuration!B9*MIN(Configuration!B14,{month}*30)/30,0)+IF(Configuration!C7=1,Configuration!B7*Configuration!B9*MIN(Configuration!B14,{month}*30)/30,0))'
             
             # S3 Intelligent storage - hourly(tier=2) + daily(tier=2) + weekly(tier=2) + off-account(tier=2)
             calc_sheet[f'D{row}'] = f'=IF(Configuration!B15>0,(IF(Configuration!C4=2,Configuration!B4,0)+IF(Configuration!C5=2,Configuration!B5,0)+IF(Configuration!C6=2,Configuration!B6,0)+IF(Configuration!C7=2,Configuration!B7,0))*Configuration!B9*MIN(Configuration!B15,{month}*30)/30,0)'
@@ -208,7 +214,7 @@ def create_backup_cost_calculator():
             calc_sheet[f'H{row}'] = f'=C{row}+D{row}+E{row}+F{row}+G{row}'
             
             # Storage cost (normal pricing)
-            calc_sheet[f'I{row}'] = f'=C{row}*Pricing!B2*(Configuration!B14/30)+D{row}*Pricing!B3*(Configuration!B15/30)+E{row}*Pricing!B4*(Configuration!B16/30)+F{row}*Pricing!B5*(Configuration!B17/30)+G{row}*Pricing!B6*(Configuration!B18/30)'
+            calc_sheet[f'I{row}'] = f'=(IF(Configuration!C4=1,Configuration!B4*Configuration!B9*MIN(Configuration!E4,{month}*30)/30*Pricing!B2*(Configuration!E4/30),0)+IF(Configuration!C5=1,Configuration!B5*Configuration!B9*MIN(Configuration!E5,{month}*30)/30*Pricing!B2*(Configuration!E5/30),0)+IF(Configuration!C6=1,Configuration!B6*Configuration!B9*MIN(Configuration!B14,{month}*30)/30*Pricing!B2*(Configuration!B14/30),0)+IF(Configuration!C7=1,Configuration!B7*Configuration!B9*MIN(Configuration!B14,{month}*30)/30*Pricing!B2*(Configuration!B14/30),0))+D{row}*Pricing!B3*(Configuration!B15/30)+E{row}*Pricing!B4*(Configuration!B16/30)+F{row}*Pricing!B5*(Configuration!B17/30)+G{row}*Pricing!B6*(Configuration!B18/30)'
             
             # Early deletion penalty for retention < minimum storage duration
             calc_sheet[f'J{row}'] = f'=IF(Configuration!B16<Pricing!C4,E{row}*Pricing!B4*((Pricing!C4-Configuration!B16)/30),0)+IF(Configuration!B17<Pricing!C5,F{row}*Pricing!B5*((Pricing!C5-Configuration!B17)/30),0)+IF(Configuration!B18<Pricing!C6,G{row}*Pricing!B6*((Pricing!C6-Configuration!B18)/30),0)'

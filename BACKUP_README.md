@@ -1,14 +1,15 @@
 # Backup Storage Cost Calculator
 
-A Python script that calculates Amazon S3 storage costs for backup retention policies across multiple storage tiers over a 1-year period.
+A Python script that generates an Excel workbook to calculate Amazon S3 storage costs for backup retention policies across multiple storage tiers over a 1-year period.
 
 ## Features
 
-- **Configurable Backup Types**: Hourly, daily, weekly, monthly, and off-account backups
-- **Storage Tier Transitions**: Automatic transitions between S3 Standard → Glacier IR → Glacier Deep Archive
-- **Minimum Duration Compliance**: Accounts for minimum storage duration requirements
-- **Retrieval Cost Tracking**: Includes retrieval costs for each storage tier
-- **Monthly Cost Projections**: 12-month cost breakdown and annual totals
+- **Configurable Backup Types**: Hourly, daily, weekly, and off-account backups with selectable storage tiers
+- **Individual Retention Periods**: Separate retention settings for hourly and daily backups
+- **Storage Tier Selection**: Each backup type can be assigned to any S3 storage tier (1-5)
+- **Minimum Duration Compliance**: Accounts for minimum storage duration requirements and penalties
+- **Cost Calculations**: Monthly storage costs and early deletion penalties
+- **Data Flow Visualization**: Visual representation of backup storage assignments
 
 ## Installation
 
@@ -24,19 +25,29 @@ python backup_cost_calculator.py
 
 ## Configuration Parameters
 
+### Backup Configuration
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| Hourly backups to keep | 24 | Number of hourly backups to keep |
-| Daily backups to keep | 7 | Number of daily backups to keep |
-| Weekly backups to keep | 4 | Number of weekly backups to keep |
-| Monthly backups to keep | 12 | Number of monthly backups to keep |
-| Off-account backups per year | 4 | Number of off-site backups retained yearly |
+| Hourly backups count | 1 | Number of hourly backups to keep |
+| Hourly backup tier | 1 (S3 Standard) | Storage tier for hourly backups |
+| Hourly retention | 7 days | Individual retention period for hourly backups |
+| Daily backups count | 1 | Number of daily backups to keep |
+| Daily backup tier | 1 (S3 Standard) | Storage tier for daily backups |
+| Daily retention | 30 days | Individual retention period for daily backups |
+| Weekly backups count | 1 | Number of weekly backups to keep |
+| Weekly backup tier | 2 (S3 Intelligent) | Storage tier for weekly backups |
+| Off-account backups count | 1 | Number of off-account backups to keep |
+| Off-account backup tier | 4 (Glacier IR) | Storage tier for off-account backups |
 | Incremental storage size (GB) | 100 | Size of each backup increment |
-| S3 Standard retention (days) | 30 | Days to retain in S3 Standard (0=skip) |
-| S3 Intelligent retention (days) | 60 | Days to retain in S3 Intelligent (0=skip) |
-| S3-IA retention (days) | 90 | Days to retain in S3-IA (0=skip, min 30) |
-| Glacier IR retention (days) | 180 | Days to retain in Glacier IR (0=skip, min 90) |
-| Glacier Deep Archive retention (days) | 365 | Days to retain in Glacier Deep Archive (0=skip, min 180) |
+
+### Storage Tier Retention
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| S3 Standard retention (days) | 15 | Days to retain in S3 Standard |
+| S3 Intelligent retention (days) | 15 | Days to retain in S3 Intelligent |
+| S3-IA retention (days) | 15 | Days to retain in S3-IA (min 30 required) |
+| Glacier IR retention (days) | 15 | Days to retain in Glacier IR (min 90 required) |
+| Glacier Deep Archive retention (days) | 15 | Days to retain in Glacier Deep Archive (min 180 required) |
 
 ## Storage Tier Pricing (USD per GB/month)
 
@@ -51,36 +62,54 @@ python backup_cost_calculator.py
 ## Output Files
 
 - `Backup_Cost_Calculator_YYYYMMDD.xlsx` with three sheets:
-  - **Configuration**: Editable parameters
-  - **Pricing**: Storage tier costs and requirements
-  - **Cost Calculation**: Monthly breakdown and totals
+  - **Configuration**: Editable backup parameters, tier assignments, and data flow visualization
+  - **Pricing**: Storage tier costs, minimum durations, and retrieval costs
+  - **Cost Calculation**: Monthly storage breakdown, costs, and penalties
 
 ## Backup Distribution Logic
 
-1. **Hourly + Daily backups**: Always stored in S3 Standard (short-term retention)
-2. **Weekly + Monthly + Off-account backups**: Flow through storage tiers based on retention settings:
-   - If S3 Intelligent retention > 0: Stored in S3 Intelligent
-   - If S3 Intelligent = 0 and S3-IA retention > 0: Stored in S3-IA
-   - If both above = 0 and Glacier IR retention > 0: Stored in Glacier IR
-   - If all above = 0 and Glacier DA retention > 0: Stored in Glacier Deep Archive
-3. **Tier skipping**: Set retention to 0 to skip that tier entirely
-4. **Monthly growth**: Monthly backups grow from 1 to 12 over the year
-5. **Off-account timing**: Off-account backups only appear after month 12
+1. **Hourly backups**: Use individual retention period (E4) and configurable tier (C4)
+2. **Daily backups**: Use individual retention period (E5) and configurable tier (C5)
+3. **Weekly backups**: Use tier-based retention (B14-B18) and configurable tier (C6)
+4. **Off-account backups**: Use tier-based retention (B14-B18) and configurable tier (C7)
+5. **Tier Codes**: 1=S3 Standard, 2=S3 Intelligent, 3=S3-IA, 4=Glacier IR, 5=Glacier DA
+6. **Storage Calculation**: Each backup type contributes to its assigned tier's monthly storage
+7. **Cost Calculation**: Includes both storage costs and early deletion penalties for minimum duration violations
+
+## Excel Sheet Structure
+
+### Configuration Sheet
+- **Backup Configuration**: Blue cells for backup counts, tier assignments, and individual retention periods
+- **Storage Tier Retention**: Blue cells for tier-based retention periods
+- **Data Flow Visualization**: Shows current backup-to-tier assignments and retention periods
+- **Tier Codes Reference**: Quick reference for tier numbers
+
+### Pricing Sheet
+- **Blue cells**: Editable pricing per GB/month for each storage tier
+- **Min Duration**: AWS minimum storage duration requirements
+- **Retrieval Costs**: Per-GB retrieval costs for each tier
+
+### Cost Calculation Sheet
+- **Monthly Breakdown**: Storage distribution across all tiers by month
+- **Storage Costs**: Monthly costs based on tier pricing and retention periods
+- **Early Deletion Penalties**: Penalties for retention periods below minimum requirements
+- **Annual Totals**: Sum of all monthly costs and storage amounts
 
 ## Customization
 
-Modify the configuration parameters in the script or edit the blue cells in the Excel output to adjust:
-- Backup frequency and retention
-- Storage transition timings
-- Incremental backup sizes
-- Pricing (update with current AWS rates)
+Edit the blue cells in the Excel output to adjust:
+- Backup counts and tier assignments
+- Individual retention periods for hourly/daily backups
+- Tier-based retention periods for weekly/off-account backups
+- Storage pricing (update with current AWS rates)
 
-## Example Output
+## Key Features
 
-With default settings:
-- **Annual storage cost**: ~$20,272
-- **Average monthly storage**: ~82,283 GB
-- **Peak storage**: Grows monthly as backups accumulate
+- **Flexible Tier Assignment**: Any backup type can use any storage tier
+- **Individual vs Tier-Based Retention**: Hourly/daily use individual periods, weekly/off-account use tier-based periods
+- **Penalty Calculation**: Automatic early deletion penalty calculation for sub-minimum retention periods
+- **Visual Data Flow**: See exactly which backups go to which tiers with what retention
+- **Real-time Updates**: Excel formulas update automatically when parameters change
 
 ## Notes
 
