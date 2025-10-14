@@ -21,6 +21,7 @@ def create_backup_cost_calculator(config_file='backup_config.json'):
     backup_config = config['backup_config']
     storage_size_gb = config['storage_size_gb']
     tier_retention = config['tier_retention']
+    aws_backup_pricing = config.get('aws_backup_pricing', {'storage_cost_per_gb_month': 0.05, 'retrieval_cost_per_gb': 0.02})
     
     # Create Excel writer
     filename = f"Backup_Cost_Calculator_{datetime.now().strftime('%Y%m%d')}.xlsx"
@@ -125,6 +126,38 @@ def create_backup_cost_calculator(config_file='backup_config.json'):
         config_sheet['F13'] = '4 = Glacier IR'
         config_sheet['F14'] = '5 = Glacier DA'
         
+        # Section 5: Backup Tier Reference Table
+        config_sheet['F16'] = 'BACKUP TIER REFERENCE'
+        config_sheet['F18'] = 'Backup Type'
+        config_sheet['G18'] = 'Tier 1'
+        config_sheet['H18'] = 'Tier 2'
+        config_sheet['I18'] = 'Tier 3'
+        config_sheet['J18'] = 'Tier 4'
+        
+        config_sheet['F19'] = 'Hourly backups'
+        config_sheet['G19'] = 24
+        config_sheet['H19'] = 24
+        config_sheet['I19'] = 6
+        config_sheet['J19'] = 0
+        
+        config_sheet['F20'] = 'Daily backups'
+        config_sheet['G20'] = 7
+        config_sheet['H20'] = 7
+        config_sheet['I20'] = 7
+        config_sheet['J20'] = 7
+        
+        config_sheet['F21'] = 'Weekly backups'
+        config_sheet['G21'] = 6
+        config_sheet['H21'] = 6
+        config_sheet['I21'] = 4
+        config_sheet['J21'] = 2
+        
+        config_sheet['F22'] = 'Off-account backups'
+        config_sheet['G22'] = 2
+        config_sheet['H22'] = 2
+        config_sheet['I22'] = 2
+        config_sheet['J22'] = 2
+        
         # Format editable cells
         from openpyxl.styles import PatternFill, Font
         blue_fill = PatternFill(start_color='E7F3FF', end_color='E7F3FF', fill_type='solid')
@@ -134,6 +167,7 @@ def create_backup_cost_calculator(config_file='backup_config.json'):
         config_sheet['A11'].font = bold_font
         config_sheet['F1'].font = bold_font
         config_sheet['F9'].font = bold_font
+        config_sheet['F16'].font = bold_font
         
         # Make backup counts and tiers editable
         for row in [4, 5, 6, 7, 9]:
@@ -150,10 +184,10 @@ def create_backup_cost_calculator(config_file='backup_config.json'):
         
         # Pricing sheet
         pricing_data = {
-            'Storage Tier': list(pricing.keys()),
-            'Price per GB/month (USD)': list(pricing.values()),
-            'Min Duration (days)': [min_duration[tier] for tier in pricing.keys()],
-            'Retrieval Cost per GB (USD)': [retrieval_costs[tier] for tier in pricing.keys()]
+            'Storage Tier': list(pricing.keys()) + ['AWS Backup'],
+            'Price per GB/month (USD)': list(pricing.values()) + [aws_backup_pricing['storage_cost_per_gb_month']],
+            'Min Duration (days)': [min_duration[tier] for tier in pricing.keys()] + [0],
+            'Retrieval Cost per GB (USD)': [retrieval_costs[tier] for tier in pricing.keys()] + [aws_backup_pricing['retrieval_cost_per_gb']]
         }
         
         pricing_df = pd.DataFrame(pricing_data)
@@ -171,7 +205,9 @@ def create_backup_cost_calculator(config_file='backup_config.json'):
             'Total Storage (GB)': [''] * 12,
             'Storage Cost (USD)': [''] * 12,
             'Early Deletion Penalty (USD)': [''] * 12,
-            'Total Monthly Cost (USD)': [''] * 12
+            'Total Monthly Cost (USD)': [''] * 12,
+            'AWS Backup Cost (USD)': [''] * 12,
+            'Cost Difference (USD)': [''] * 12
         }
         
         calc_df = pd.DataFrame(calc_data)
@@ -213,6 +249,12 @@ def create_backup_cost_calculator(config_file='backup_config.json'):
             
             # Total monthly cost (storage + penalties)
             calc_sheet[f'K{row}'] = f'=I{row}+J{row}'
+            
+            # AWS Backup cost (total storage * AWS Backup price)
+            calc_sheet[f'L{row}'] = f'=H{row}*Pricing!B7'
+            
+            # Cost difference (S3 Direct - AWS Backup)
+            calc_sheet[f'M{row}'] = f'=K{row}-L{row}'
         
         # Add annual summary
         calc_sheet['A14'] = 'Annual Total'
@@ -226,10 +268,12 @@ def create_backup_cost_calculator(config_file='backup_config.json'):
         calc_sheet['I14'] = '=SUM(I2:I13)'
         calc_sheet['J14'] = '=SUM(J2:J13)'
         calc_sheet['K14'] = '=SUM(K2:K13)'
+        calc_sheet['L14'] = '=SUM(L2:L13)'
+        calc_sheet['M14'] = '=SUM(M2:M13)'
         
         # Format pricing sheet values as editable
         pricing_sheet = workbook['Pricing']
-        for row in range(2, 7):
+        for row in range(2, 8):  # Updated to include AWS Backup row
             pricing_sheet[f'B{row}'].fill = blue_fill
         
         # Auto-adjust column widths

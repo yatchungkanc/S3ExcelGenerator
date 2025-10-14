@@ -33,5 +33,9 @@
     "S3-IA": 15,
     "Glacier IR": 15,
     "Glacier Deep Archive": 15
+  },
+  "aws_backup_pricing": {
+    "storage_cost_per_gb_month": 0.05,
+    "retrieval_cost_per_gb": 0.02
   }
 }
