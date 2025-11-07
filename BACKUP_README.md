@@ -4,29 +4,32 @@ A Python script that generates an Excel workbook to calculate Amazon S3 storage 
 
 ## Features
 
-- **Configurable Backup Types**: Hourly, daily, weekly, and off-account backups with selectable storage tiers
-- **Individual Retention Periods**: Separate retention settings for hourly and daily backups
-- **Storage Tier Selection**: Each backup type can be assigned to any S3 storage tier (1-5)
-- **Minimum Duration Compliance**: Accounts for minimum storage duration requirements and penalties
-- **Cost Calculations**: Monthly storage costs and early deletion penalties
-- **Data Flow Visualization**: Visual representation of backup storage assignments
+- **Step-by-Step Configuration**: Organized 3-step setup process with clear visual flow
+- **Dropdown Tier Selection**: Auto-populates backup counts based on predefined tier configurations
+- **Individual Retention Control**: Separate retention settings for all backup types (hourly, daily, weekly, off-account)
+- **Storage Tier Flexibility**: Each backup type can be assigned to any S3 storage tier (1-5)
+- **Early Deletion Penalties**: Automatic calculation of penalties for retention periods below AWS minimums
+- **AWS Backup Comparison**: Side-by-side cost comparison with AWS Backup service
+- **Real-time Updates**: Excel formulas update automatically when parameters change
 
 ## Installation
 
 ```bash
-pip install pandas openpyxl
+pip install openpyxl
 ```
 
 **Note**: The script requires a `backup_config.json` configuration file to run.
 
 ## Usage
 
-1. Create a `backup_config.json` file with your configuration (see Configuration section)
+1. Ensure `backup_config.json` exists with your configuration (see Configuration section)
 2. Run the script:
 
 ```bash
 python backup_cost_calculator.py
 ```
+
+3. Open the generated Excel file and use the dropdown in Step 1 to select different tier configurations
 
 ## Configuration
 
@@ -86,72 +89,91 @@ The script requires a `backup_config.json` file with the following structure:
 ## Output Files
 
 - `Backup_Cost_Calculator_YYYYMMDD.xlsx` with three sheets:
-  - **Configuration**: Editable backup parameters, tier assignments, and data flow visualization
-  - **Pricing**: Storage tier costs, minimum durations, and retrieval costs
-  - **Cost Calculation**: Monthly storage breakdown, costs, and penalties
+  - **Configuration**: Step-by-step setup with dropdown tier selection and backup tier reference table
+  - **Pricing**: Storage tier costs, minimum durations, retrieval costs, and AWS Backup pricing
+  - **Cost Calculation**: Monthly storage breakdown, costs, penalties, AWS Backup comparison, and cost differences
 
 ## Error Handling
 
 The script will raise a `FileNotFoundError` if the `backup_config.json` file is not found. Ensure the configuration file exists in the same directory as the script.
 
-## Backup Distribution Logic
+## Configuration Steps
 
-1. **Hourly backups**: Use individual retention period and configurable tier (1-5)
-2. **Daily backups**: Use individual retention period and configurable tier (1-5)
-3. **Weekly backups**: Use tier-based retention from configuration and configurable tier (1-5)
-4. **Off-account backups**: Use tier-based retention from configuration and configurable tier (1-5)
-5. **Tier Codes**: 1=S3 Standard, 2=S3 Intelligent, 3=S3-IA, 4=Glacier IR, 5=Glacier DA
-6. **Storage Calculation**: Each backup type contributes to its assigned tier's monthly storage based on retention periods
-7. **Cost Calculation**: Includes storage costs, early deletion penalties, and minimum duration compliance checks
+### **Step 1: Backup Tier Selection**
+- **Dropdown menu**: Select from Tier 1, Tier 2, Tier 3, or Tier 4 configurations
+- **Auto-population**: Backup counts automatically update based on selected tier
+- **Reference table**: Shows predefined backup counts for each tier
+
+### **Step 2: Backup Configuration** 
+- **Individual control**: Set backup counts, storage tiers, and retention periods
+- **Blue highlighting**: All editable parameters clearly marked
+- **Real-time updates**: Tier names update automatically based on storage tier selection
+
+### **Step 3: Storage Tier Retention**
+- **Tier-based retention**: Fallback values when individual retention not specified
+- **Minimum compliance**: Shows AWS minimum duration requirements and penalty status
+- **Usage note**: Explains when these values are used in calculations
 
 ## Excel Sheet Structure
 
 ### Configuration Sheet
-- **Backup Configuration**: Blue cells for backup counts, tier assignments, and individual retention periods
-- **Storage Tier Retention**: Blue cells for tier-based retention periods
-- **Data Flow Visualization**: Shows current backup-to-tier assignments and retention periods
-- **Tier Codes Reference**: Quick reference for tier numbers
+- **Step 1**: Dropdown tier selection with auto-population
+- **Step 2**: Individual backup configuration (counts, tiers, retention)
+- **Step 3**: Tier-based retention settings with compliance status
+- **Reference Table**: Predefined tier configurations for easy copy-paste
 
 ### Pricing Sheet
-- **Blue cells**: Editable pricing per GB/month for each storage tier
-- **Min Duration**: AWS minimum storage duration requirements
-- **Retrieval Costs**: Per-GB retrieval costs for each tier
+- **Storage Tiers**: S3 Standard, S3 Intelligent, S3-IA, Glacier IR, Glacier Deep Archive
+- **AWS Backup**: Separate pricing row for AWS Backup service comparison
+- **Editable Pricing**: Blue-highlighted cells for easy price updates
+- **Minimum Durations**: AWS requirements for each storage tier
 
 ### Cost Calculation Sheet
-- **Monthly Breakdown**: Storage distribution across all tiers by month
-- **Storage Costs**: Monthly costs based on tier pricing and retention periods
-- **Early Deletion Penalties**: Penalties for retention periods below minimum requirements
-- **Annual Totals**: Sum of all monthly costs and storage amounts
+- **Monthly Analysis**: 12-month breakdown of storage and costs
+- **Storage Distribution**: GB amounts across all storage tiers
+- **Cost Components**: Storage costs, early deletion penalties, total monthly costs
+- **AWS Comparison**: AWS Backup costs and cost difference calculations
+- **Annual Summary**: Total costs and storage amounts for the year
 
 ## Customization
 
 ### JSON Configuration
 Edit the `backup_config.json` file to adjust:
-- Backup counts and tier assignments
-- Individual retention periods for hourly/daily backups
-- Tier-based retention periods for all storage tiers
+- Default backup configurations and tier assignments
+- Individual retention periods for all backup types
+- Tier-based retention periods for fallback scenarios
 - Storage pricing (update with current AWS rates)
-- Minimum duration requirements
-- Retrieval costs
+- AWS Backup pricing for comparison
+- Minimum duration requirements and retrieval costs
 
-### Excel Output
-Edit the blue cells in the generated Excel file to adjust:
-- Backup counts and tier assignments
-- Individual retention periods for hourly/daily backups
-- Tier-based retention periods for weekly/off-account backups
-- Storage pricing (update with current AWS rates)
+### Excel Interface
+**Step 1**: Use dropdown to quickly switch between predefined tier configurations
+**Step 2**: Edit blue cells to customize:
+- Backup counts for each type
+- Storage tier assignments (1-5)
+- Individual retention periods
+- Storage size per backup
+**Step 3**: Adjust tier-based retention periods and view compliance status
+**Pricing Sheet**: Update blue cells with current AWS pricing
 
 ## Key Features
 
-- **Flexible Tier Assignment**: Any backup type can use any storage tier
-- **Individual vs Tier-Based Retention**: Hourly/daily use individual periods, weekly/off-account use tier-based periods
-- **Penalty Calculation**: Automatic early deletion penalty calculation for sub-minimum retention periods
-- **Visual Data Flow**: See exactly which backups go to which tiers with what retention
-- **Real-time Updates**: Excel formulas update automatically when parameters change
+- **User-Friendly Interface**: Step-by-step configuration with dropdown selections
+- **Flexible Configuration**: Any backup type can use any storage tier with individual retention
+- **Comprehensive Cost Analysis**: Storage costs, penalties, and AWS Backup comparison
+- **Early Deletion Penalties**: Automatic calculation based on individual retention vs AWS minimums
+- **Real-time Updates**: All calculations update automatically when parameters change
+- **Professional Formatting**: Clean layout with blue highlighting for editable parameters
 
 ## Notes
 
-- Pricing reflects current AWS S3 rates (US East N. Virginia)
-- Minimum storage duration charges are included in calculations
-- Retrieval costs are tracked but not automatically calculated
-- Update pricing regularly to reflect current AWS rates
+- **Pricing**: Reflects current AWS S3 rates (US East N. Virginia region)
+- **Early Deletion Penalties**: Calculated for S3-IA (30 days), Glacier IR (90 days), and Glacier Deep Archive (180 days)
+- **AWS Backup Comparison**: Uses configurable AWS Backup pricing for cost comparison
+- **Individual Retention**: All backup types (hourly, daily, weekly, off-account) use their individual retention periods for calculations
+- **Tier-based Retention**: Used only as fallback when individual retention is not specified
+- **Regular Updates**: Update pricing in both JSON config and Excel pricing sheet to reflect current AWS rates
+
+## Verification
+
+Run `python verify_cost_calculations.py` to manually verify calculation accuracy and see expected Excel values.
